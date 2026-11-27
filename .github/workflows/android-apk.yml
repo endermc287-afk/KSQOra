@@ -1,3 +1,4 @@
+
 name: Build KSQora Android APK
 
 on:
@@ -13,20 +14,24 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK packages
+      - name: Accept SDK licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Install SDK packages
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Install Gradle 8.9
@@ -35,7 +40,7 @@ jobs:
           unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gradle-8.9/bin" >> "$GITHUB_PATH"
 
-      - name: Build debug APK
+      - name: Build APK
         working-directory: android
         run: gradle --no-daemon :app:assembleDebug
 
