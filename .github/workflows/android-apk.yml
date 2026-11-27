@@ -1,10 +1,10 @@
+
 name: Build KSQora Android APK
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "android/**"
       - ".github/workflows/android-apk.yml"
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Java 17
@@ -28,36 +28,36 @@ jobs:
           java-version: "17"
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses
-
-      - name: Install Android SDK packages
         run: |
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-35"
-          sdkmanager "build-tools;35.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
 
-      - name: Setup Gradle 8.9
+      - name: Accept SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+
+      - name: Install Android packages
         run: |
-          curl -fL https://services.gradle.org/distributions/gradle-8.9-bin.zip -o "$RUNNER_TEMP/gradle.zip"
-          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "build-tools;35.0.0"
+
+      - name: Install Gradle 8.9
+        run: |
+          curl -fL https://services.gradle.org/distributions/gradle-8.9-bin.zip -o gradle.zip
+          unzip -q gradle.zip -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/gradle-8.9/bin" >> "$GITHUB_PATH"
 
-      - name: Verify Android project
+      - name: Check project files
         run: |
           test -f android/settings.gradle
           test -f android/build.gradle
           test -f android/app/build.gradle
           test -f android/app/src/main/AndroidManifest.xml
+          test -f android/app/src/main/java/com/ksqora/app/MainActivity.kt
 
-      - name: Build debug APK
+      - name: Build APK
         working-directory: android
         run: gradle --no-daemon --stacktrace :app:assembleDebug
-
-      - name: Verify APK
-        run: test -f android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
